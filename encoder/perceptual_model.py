@@ -18,11 +18,12 @@ def load_images(images_list, img_size):
 
 
 class PerceptualModel:
-    def __init__(self, img_size, layer=9, batch_size=1, sess=None):
+    def __init__(self, img_size=1024, layer=9, batch_size=1, sess=None):
         self.sess = tf.get_default_session() if sess is None else sess
         K.set_session(self.sess)
         self.img_size = img_size
         self.layers = [1, 2, 8, 12]
+        self.n_layers = len(self.layers)
         self.batch_size = batch_size
 
         self.perceptual_model = None
@@ -30,21 +31,23 @@ class PerceptualModel:
         self.features_weight = None
         self.loss = None
 
-    def build_perceptual_model(self, generated_image_tensor):
+    def build_perceptual_model(self, image):
         vgg16 = VGG16(include_top=False, input_shape=(self.img_size, self.img_size, 3))
-        self.perceptual_model = Model(vgg16.input, vgg16.layers[self.layer].output)
-        generated_image = preprocess_input(tf.image.resize_images(generated_image_tensor,
-                                                                  (self.img_size, self.img_size), method=1))
-        generated_img_features = self.perceptual_model(generated_image)
+        outputs = [vgg16.layers[l].output for l in self.layers]
+        self.perceptual_model = Model(vgg16.input, outputs)
+        image = preprocess_input(image)
+        image_features = self.perceptual_model(image)
 
-        self.ref_img_features = tf.get_variable('ref_img_features', shape=generated_img_features.shape,
-                                                dtype='float32', initializer=tf.initializers.zeros())
-        self.features_weight = tf.get_variable('features_weight', shape=generated_img_features.shape,
-                                               dtype='float32', initializer=tf.initializers.zeros())
-        self.sess.run([self.features_weight.initializer, self.features_weight.initializer])
+        self.ref_img_features = [
+            tf.get_variable('ref_img_features_%d' % i,     
+                shape=image_features.shape,
+                dtype='float32',
+                initializer=tf.initializers.zeros()) for i in range(self.n_layers)]
+        self.sess.run([f.initializer for f in self.ref_img_features])
 
-        self.loss = tf.losses.mean_squared_error(self.features_weight * self.ref_img_features,
-                                                 self.features_weight * generated_img_features) / 82890.0
+        losses = [tf.square(ref - img).mean()
+            for ref,img in zip(self.ref_img_features, image_features)]
+        self.loss = sum(losses) / len(losses)
 
     def set_reference_images(self, images_list):
         assert(len(images_list) != 0 and len(images_list) <= self.batch_size)
