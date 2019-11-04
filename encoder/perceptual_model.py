@@ -66,7 +66,7 @@ class PerceptualModel:
         vars_to_optimize = vars_to_optimize if isinstance(vars_to_optimize, list) else [vars_to_optimize]
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
         min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])
-        self.sess.run([tf.global_variable_initializer()])
+        self.sess.run([tf.global_variables_initializer()])
         for _ in range(iterations):
             _, loss = self.sess.run([min_op, self.loss])
             yield loss

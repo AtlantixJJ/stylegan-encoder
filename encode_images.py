@@ -31,7 +31,7 @@ parser.add_argument('--start', type=int, default=0, help='Start from')
 # Perceptual model params
 parser.add_argument('--image_size', default=1024, help='Size of images for perceptual model', type=int)
 parser.add_argument('--lr', default=0.01, help='Learning rate for perceptual model', type=float)
-parser.add_argument('--iterations', default=2000, help='Number of optimization steps for each batch', type=int)
+parser.add_argument('--iterations', default=1000, help='Number of optimization steps for each batch', type=int)
 
 # Generator params
 parser.add_argument('--randomize_noise', default=False, help='Add noise to dlatents during optimization', type=bool)
@@ -60,6 +60,7 @@ perceptual_model = PerceptualModel(args.image_size, layer=9, batch_size=args.bat
 perceptual_model.build_perceptual_model(generator.generated_image)
 
 # Optimize (only) dlatents by minimizing perceptual loss between reference and generated images in feature space
+record = []
 for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     total=len(ref_images)//args.batch_size):
     names = [os.path.splitext(os.path.basename(x))[0] for x in images_batch]
@@ -67,19 +68,23 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     perceptual_model.set_reference_images(images_batch)
     op = perceptual_model.optimize(generator.dlatent_variable, iterations=args.iterations, learning_rate=args.lr)
     pbar = tqdm(op, leave=False, total=args.iterations)
+    best_loss = 0xffff
     losses = []
-    for loss in pbar:
+    for i, loss in enumerate(pbar):
+        if i > args.iterations * 0.7 and loss < best_loss:
+            best_loss = loss
+            best_d = generator.get_dlatents()
+            best_image = generator.generate_images()
         losses.append(loss)
         pbar.set_description(' '.join(names)+' Loss: %.2f' % loss)
-    print(' '.join(names), ' loss:', loss)
+    print(' '.join(names), ' loss:', best_loss)
+    record.append(losses)
 
     # Generate images from found dlatents and save them
-    generated_images = generator.generate_images()
-    generated_dlatents = generator.get_dlatents()
-    for img_array, dlatent, img_name in zip(generated_images, generated_dlatents, names):
+    for img_array, dlatent, img_name in zip(best_image, best_d, names):
         img = PIL.Image.fromarray(img_array, 'RGB')
         img.save(os.path.join(args.generated_images_dir, f'{img_name}.png'), 'PNG')
         np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), dlatent)
-        np.save(os.path.join(args.generated_images_dir, f'{img_name}_loss.npy'), losses)
+        np.save(os.path.join(args.generated_images_dir, 'loss_record.npy'), record)
 
     generator.reset_dlatents()
