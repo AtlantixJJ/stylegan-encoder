@@ -22,7 +22,7 @@ class PerceptualModel:
         self.sess = tf.get_default_session() if sess is None else sess
         K.set_session(self.sess)
         self.img_size = img_size
-        self.layer = layer
+        self.layers = [1, 2, 8, 12]
         self.batch_size = batch_size
 
         self.perceptual_model = None
