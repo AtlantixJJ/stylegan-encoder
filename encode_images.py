@@ -38,6 +38,7 @@ def main():
 
     ref_images = [os.path.join(args.src_dir, x) for x in os.listdir(args.src_dir)]
     ref_images = list(filter(os.path.isfile, ref_images))
+    ref_images.sort()
 
     if len(ref_images) == 0:
         raise Exception('%s is empty' % args.src_dir)

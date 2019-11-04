@@ -38,9 +38,13 @@ class PerceptualModel:
         image = preprocess_input(image)
         image_features = self.perceptual_model(image)
 
+        self.ref_image = tf.get_variable('ref_img',
+            shape=[image_features[i].shape[0], self.img_size, self.img_size, 3],
+            dtype='float32',
+            initializer=tf.initializers.zeros())
         self.ref_img_features = [
             tf.get_variable('ref_img_features_%d' % i,     
-                shape=image_features.shape,
+                shape=image_features[i].shape,
                 dtype='float32',
                 initializer=tf.initializers.zeros()) for i in range(self.n_layers)]
         self.sess.run([f.initializer for f in self.ref_img_features])
@@ -48,27 +52,13 @@ class PerceptualModel:
         losses = [tf.square(ref - img).mean()
             for ref,img in zip(self.ref_img_features, image_features)]
         self.loss = sum(losses) / len(losses)
+        self.loss += tf.square(self.ref_image - img)
 
     def set_reference_images(self, images_list):
         assert(len(images_list) != 0 and len(images_list) <= self.batch_size)
         loaded_image = load_images(images_list, self.img_size)
         image_features = self.perceptual_model.predict_on_batch(loaded_image)
-
-        # in case if number of images less than actual batch size
-        # can be optimized further
-        weight_mask = np.ones(self.features_weight.shape)
-        if len(images_list) != self.batch_size:
-            features_space = list(self.features_weight.shape[1:])
-            existing_features_shape = [len(images_list)] + features_space
-            empty_features_shape = [self.batch_size - len(images_list)] + features_space
-
-            existing_examples = np.ones(shape=existing_features_shape)
-            empty_examples = np.zeros(shape=empty_features_shape)
-            weight_mask = np.vstack([existing_examples, empty_examples])
-
-            image_features = np.vstack([image_features, np.zeros(empty_features_shape)])
-
-        self.sess.run(tf.assign(self.features_weight, weight_mask))
+        self.sess.run(tf.assign(self.ref_img, loaded_image))
         self.sess.run(tf.assign(self.ref_img_features, image_features))
 
     def optimize(self, vars_to_optimize, iterations=500, learning_rate=1.):
