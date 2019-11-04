@@ -39,7 +39,7 @@ class PerceptualModel:
         image_features = self.perceptual_model(image)
 
         self.ref_image = tf.get_variable('ref_img',
-            shape=[image_features[i].shape[0], self.img_size, self.img_size, 3],
+            shape=[image_features[0].shape[0], self.img_size, self.img_size, 3],
             dtype='float32',
             initializer=tf.initializers.zeros())
         self.ref_img_features = [
@@ -49,22 +49,24 @@ class PerceptualModel:
                 initializer=tf.initializers.zeros()) for i in range(self.n_layers)]
         self.sess.run([f.initializer for f in self.ref_img_features])
 
-        losses = [tf.square(ref - img).mean()
+        losses = [tf.losses.huber_loss(ref, img)
             for ref,img in zip(self.ref_img_features, image_features)]
         self.loss = sum(losses) / len(losses)
-        self.loss += tf.square(self.ref_image - img)
+        self.loss += tf.losses.huber_loss(self.ref_image, image)
 
     def set_reference_images(self, images_list):
         assert(len(images_list) != 0 and len(images_list) <= self.batch_size)
         loaded_image = load_images(images_list, self.img_size)
         image_features = self.perceptual_model.predict_on_batch(loaded_image)
-        self.sess.run(tf.assign(self.ref_img, loaded_image))
-        self.sess.run(tf.assign(self.ref_img_features, image_features))
+        self.sess.run(tf.assign(self.ref_image, loaded_image))
+        self.sess.run([tf.assign(ref, img)
+            for ref,img in zip(self.ref_img_features, image_features)])
 
     def optimize(self, vars_to_optimize, iterations=500, learning_rate=1.):
         vars_to_optimize = vars_to_optimize if isinstance(vars_to_optimize, list) else [vars_to_optimize]
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
         min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])
+        self.sess.run([tf.global_variable_initializer()])
         for _ in range(iterations):
             _, loss = self.sess.run([min_op, self.loss])
             yield loss

@@ -1,0 +1,1 @@
+scp -r encode_images.py encoder img:stylegan-encoder/

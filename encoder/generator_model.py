@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import dnnlib.tflib as tflib
 from functools import partial
-
+import os
 
 def create_stub(name, batch_size):
     return tf.constant(0, dtype='float32', shape=(batch_size, 0))
@@ -18,13 +18,20 @@ def create_variable_for_generator(name, batch_size):
 class Generator:
     def __init__(self, model, batch_size, randomize_noise=False):
         self.batch_size = batch_size
+        self.synthesis = model.components.synthesis
+        self.mapping = model.components.mapping
+        self.initial_dlatents = self.get_mean_dlatents()
 
-        self.initial_dlatents = np.zeros((self.batch_size, 18, 512))
-        model.components.synthesis.run(self.initial_dlatents,
-                                       randomize_noise=randomize_noise, minibatch_size=self.batch_size,
-                                       custom_inputs=[partial(create_variable_for_generator, batch_size=batch_size),
-                                                      partial(create_stub, batch_size=batch_size)],
-                                       structure='fixed')
+        self.synthesis.run(
+            self.initial_dlatents,
+            randomize_noise=randomize_noise,
+            minibatch_size=self.batch_size,
+            custom_inputs=[
+                partial(create_variable_for_generator,
+                    batch_size=batch_size),
+                partial(create_stub,
+                batch_size=batch_size)],
+            structure='fixed')
 
         self.sess = tf.get_default_session()
         self.graph = tf.get_default_graph()
@@ -33,8 +40,24 @@ class Generator:
         self.set_dlatents(self.initial_dlatents)
 
         self.generator_output = self.graph.get_tensor_by_name('G_synthesis_1/_Run/concat:0')
-        self.generated_image = tflib.convert_images_to_uint8(self.generator_output, nchw_to_nhwc=True, uint8_cast=False)
+        self.generated_image = tflib.convert_images_to_uint8(
+            self.generator_output, nchw_to_nhwc=True, uint8_cast=False)
         self.generated_image_uint8 = tf.saturate_cast(self.generated_image, tf.uint8)
+
+    def get_mean_dlatents(self):
+        if os.path.exists("face_average_w.npy"):
+            self.avg_w = np.load("face_average_w.npy")
+            return self.avg_w
+
+        print("=> Calculating mean face w")
+        self.rng = np.random.RandomState(1314)
+        w_ = np.zeros((4096, 18, 512), dtype="float32")
+        for i in range(4096):
+            latent = self.rng.randn(1, 512)
+            w_[i] = self.mapping.run(latent, None)[0]
+        self.avg_w = w_.mean(0, keepdims=True)
+        np.save("face_average_w.npy", self.avg_w)
+        return self.avg_w
 
     def reset_dlatents(self):
         self.set_dlatents(self.initial_dlatents)
