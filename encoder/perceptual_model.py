@@ -47,12 +47,11 @@ class PerceptualModel:
                 shape=image_features[i].shape,
                 dtype='float32',
                 initializer=tf.initializers.zeros()) for i in range(self.n_layers)]
-        self.sess.run([f.initializer for f in self.ref_img_features])
 
-        losses = [tf.losses.huber_loss(ref, img)
+        losses = [tf.losses.mean_squared_error(ref, img)
             for ref,img in zip(self.ref_img_features, image_features)]
-        self.loss = sum(losses) / len(losses)
-        self.loss += tf.losses.huber_loss(self.ref_image, image)
+        self.loss = sum(losses)
+        self.loss += tf.losses.mean_squared_error(self.ref_image, image)
 
     def set_reference_images(self, images_list):
         assert(len(images_list) != 0 and len(images_list) <= self.batch_size)
@@ -66,8 +65,8 @@ class PerceptualModel:
         vars_to_optimize = vars_to_optimize if isinstance(vars_to_optimize, list) else [vars_to_optimize]
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
         min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])
-        self.sess.run([tf.global_variables_initializer()])
+        self.sess.run(tf.variables_initializer(optimizer.variables()))
+        run_options = tf.RunOptions(report_tensor_allocations_upon_oom=True)
         for _ in range(iterations):
-            _, loss = self.sess.run([min_op, self.loss])
+            _, loss = self.sess.run([min_op, self.loss], options=run_options)
             yield loss
-

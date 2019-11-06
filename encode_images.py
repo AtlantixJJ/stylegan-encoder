@@ -59,12 +59,12 @@ generator = Generator(Gs_network, args.batch_size, randomize_noise=args.randomiz
 perceptual_model = PerceptualModel(args.image_size, layer=9, batch_size=args.batch_size)
 perceptual_model.build_perceptual_model(generator.generated_image)
 
-# Optimize (only) dlatents by minimizing perceptual loss between reference and generated images in feature space
 record = []
 for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     total=len(ref_images)//args.batch_size):
     names = [os.path.splitext(os.path.basename(x))[0] for x in images_batch]
 
+    generator.reset_dlatents()
     perceptual_model.set_reference_images(images_batch)
     op = perceptual_model.optimize(generator.dlatent_variable, iterations=args.iterations, learning_rate=args.lr)
     pbar = tqdm(op, leave=False, total=args.iterations)
@@ -86,5 +86,3 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
         img.save(os.path.join(args.generated_images_dir, f'{img_name}.png'), 'PNG')
         np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), dlatent)
         np.save(os.path.join(args.generated_images_dir, 'loss_record.npy'), record)
-
-    generator.reset_dlatents()
