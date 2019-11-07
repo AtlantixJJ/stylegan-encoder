@@ -68,7 +68,7 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     perceptual_model.set_reference_images(images_batch)
     op = perceptual_model.optimize(generator.dlatent_variable, iterations=args.iterations, learning_rate=args.lr)
     pbar = tqdm(op, leave=False, total=args.iterations)
-    best_loss = 0xffff
+    best_loss = 0xffffffff
     losses = []
     for i, loss in enumerate(pbar):
         if i > args.iterations * 0.7 and loss < best_loss:
@@ -85,4 +85,4 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
         img = PIL.Image.fromarray(img_array, 'RGB')
         img.save(os.path.join(args.generated_images_dir, f'{img_name}.png'), 'PNG')
         np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), dlatent)
-        np.save(os.path.join(args.generated_images_dir, 'loss_record.npy'), record)
+        np.save(os.path.join(args.generated_images_dir, f'{img_name}.npy'), record)
