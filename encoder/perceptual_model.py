@@ -51,7 +51,7 @@ class PerceptualModel:
         losses = [tf.losses.mean_squared_error(ref, img)
             for ref,img in zip(self.ref_img_features, image_features)]
         self.loss = sum(losses)
-        self.loss += tf.losses.mean_squared_error(self.ref_image, image)
+        #self.loss += tf.losses.mean_squared_error(self.ref_image, image)
 
     def set_reference_images(self, images_list):
         assert(len(images_list) != 0 and len(images_list) <= self.batch_size)
