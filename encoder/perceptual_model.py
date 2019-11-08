@@ -61,12 +61,14 @@ class PerceptualModel:
         self.sess.run([tf.assign(ref, img)
             for ref,img in zip(self.ref_img_features, image_features)])
 
-    def optimize(self, vars_to_optimize, iterations=500, learning_rate=1.):
-        vars_to_optimize = vars_to_optimize if isinstance(vars_to_optimize, list) else [vars_to_optimize]
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-        min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])
-        self.sess.run(tf.variables_initializer(optimizer.variables()))
+    def setup(self, vars_to_optimize, learning_rate):
+        self.vars_to_optimize = vars_to_optimize if isinstance(vars_to_optimize, list) else [vars_to_optimize]
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+        self.min_op = self.optimizer.minimize(self.loss, var_list=[self.vars_to_optimize])
+        self.sess.run(tf.variables_initializer(self.optimizer.variables()))
+
+    def optimize(self, iterations=500):
         run_options = tf.RunOptions(report_tensor_allocations_upon_oom=True)
         for _ in range(iterations):
-            _, loss = self.sess.run([min_op, self.loss], options=run_options)
+            _, loss = self.sess.run([self.min_op, self.loss], options=run_options)
             yield loss

@@ -9,6 +9,7 @@ import dnnlib.tflib as tflib
 import config
 from encoder.generator_model import Generator
 from encoder.perceptual_model import PerceptualModel
+import tensorflow as tf
 
 #URL_FFHQ = 'https://drive.google.com/uc?id=1MEGjdvVpUsu1jB4zrXZN7Y4kBBOzizDQ'
 PATH_FFHQ = 'cache/karras2019stylegan-ffhq-1024x1024.pkl'
@@ -58,6 +59,10 @@ with open(PATH_FFHQ, "rb") as f:
 generator = Generator(Gs_network, args.batch_size, randomize_noise=args.randomize_noise)
 perceptual_model = PerceptualModel(args.image_size, layer=9, batch_size=args.batch_size)
 perceptual_model.build_perceptual_model(generator.generated_image)
+perceptual_model.setup(generator.dlatent_variable, args.lr)
+generator.reset_dlatents()
+sess = tf.get_default_session()
+sess.graph.finalize()
 
 record = []
 for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
@@ -66,7 +71,7 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
 
     generator.reset_dlatents()
     perceptual_model.set_reference_images(images_batch)
-    op = perceptual_model.optimize(generator.dlatent_variable, iterations=args.iterations, learning_rate=args.lr)
+    op = perceptual_model.optimize(args.iterations)
     pbar = tqdm(op, leave=False, total=args.iterations)
     best_loss = 0xffffffff
     losses = []
