@@ -60,6 +60,9 @@ generator = Generator(Gs_network, args.batch_size, randomize_noise=args.randomiz
 perceptual_model = PerceptualModel(args.image_size, layer=9, batch_size=args.batch_size)
 perceptual_model.build_perceptual_model(generator.generated_image)
 perceptual_model.setup(generator.dlatent_variable, args.lr)
+refs = [perceptual_model.ref_image] + perceptual_model.ref_img_features
+min_op = perceptual_model.min_op
+loss = perceptual_model.loss
 sess = tf.get_default_session()
 sess.graph.finalize()
 
@@ -68,15 +71,17 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     total=len(ref_images)//args.batch_size):
     names = [os.path.splitext(os.path.basename(x))[0] for x in images_batch]
 
-    generator.reset_dlatents()
-    perceptual_model.set_reference_images(images_batch)
-    op = perceptual_model.optimize(args.iterations)
-    pbar = tqdm(op, leave=False, total=args.iterations)
+    # get reference feature
+    refs_np = perceptual_model.get_reference_features(images_batch)
+
     best_loss = 0xffffffff
     losses = []
-    for i, loss in enumerate(pbar):
-        if i > args.iterations * 0.7 and loss < best_loss:
-            best_loss = loss
+    generator.reset_dlatents()
+    pbar = tqdm(range(args.iterations), leave=False)
+    for i in enumerate(pbar):
+        _, loss_np = sess.run([min_op, loss], {t:v for t,v in zip(refs, refs_np)})
+        if i > args.iterations * 0.7 and loss_np < best_loss:
+            best_loss = loss_np
             best_d = generator.get_dlatents()
             best_image = generator.generate_images()
         losses.append(loss)

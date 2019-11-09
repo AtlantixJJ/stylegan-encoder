@@ -33,33 +33,28 @@ class PerceptualModel:
 
     def build_perceptual_model(self, image):
         vgg16 = VGG16(include_top=False, input_shape=(self.img_size, self.img_size, 3))
-        outputs = [vgg16.layers[l].output for l in self.layers]
-        self.perceptual_model = Model(vgg16.input, outputs)
+        self.input = vgg16.input
+        self.outputs = [vgg16.layers[l].output for l in self.layers]
+        self.perceptual_model = Model(self.input, self.outputs)
         image = preprocess_input(image)
         image_features = self.perceptual_model(image)
+        N = image_features[0].shape[0]
 
-        self.ref_image = tf.get_variable('ref_img',
-            shape=[image_features[0].shape[0], self.img_size, self.img_size, 3],
-            dtype='float32',
-            initializer=tf.initializers.zeros())
+        self.ref_image = tf.placeholder(tf.float32, shape=[N, self.img_size, self.img_size, 3])
         self.ref_img_features = [
-            tf.get_variable('ref_img_features_%d' % i,     
-                shape=image_features[i].shape,
-                dtype='float32',
-                initializer=tf.initializers.zeros()) for i in range(self.n_layers)]
+            tf.placeholder(tf.float32, shape=image_features[i].shape)
+                for i in range(self.n_layers)]
 
         losses = [tf.losses.mean_squared_error(ref, img)
             for ref,img in zip(self.ref_img_features, image_features)]
         self.loss = sum(losses)
-        #self.loss += tf.losses.mean_squared_error(self.ref_image, image)
+        self.loss += tf.losses.mean_squared_error(self.ref_image, image)
 
-    def set_reference_images(self, images_list):
+    def get_reference_features(self, images_list):
         assert(len(images_list) != 0 and len(images_list) <= self.batch_size)
         loaded_image = load_images(images_list, self.img_size)
         image_features = self.perceptual_model.predict_on_batch(loaded_image)
-        self.sess.run(tf.assign(self.ref_image, loaded_image))
-        self.sess.run([tf.assign(ref, img)
-            for ref,img in zip(self.ref_img_features, image_features)])
+        return [load_images] + image_features
 
     def setup(self, vars_to_optimize, learning_rate):
         self.vars_to_optimize = vars_to_optimize if isinstance(vars_to_optimize, list) else [vars_to_optimize]
