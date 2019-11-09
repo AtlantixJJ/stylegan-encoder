@@ -38,7 +38,7 @@ class Generator:
         self.graph = tf.get_default_graph()
 
         self.dlatent_variable = next(v for v in tf.global_variables() if 'learnable_dlatents' in v.name)
-        self.set_dlatents(self.initial_dlatents)
+        self.assign_dlatent_op = tf.assign(self.dlatent_variable, self.initial_dlatents_np)
         
         self.generator_output = self.graph.get_tensor_by_name('G_synthesis_1/_Run/concat:0')
         self.generated_image = tflib.convert_images_to_uint8(
@@ -61,11 +61,7 @@ class Generator:
         return self.avg_w
 
     def reset_dlatents(self):
-        self.set_dlatents(self.initial_dlatents)
-
-    def set_dlatents(self, dlatents):
-        assert (dlatents.shape == (self.batch_size, 18, 512))
-        self.sess.run(tf.assign(self.dlatent_variable, dlatents))
+        self.sess.run(self.assign_dlatent_op)
 
     def get_dlatents(self):
         return self.sess.run(self.dlatent_variable)

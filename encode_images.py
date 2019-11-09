@@ -60,7 +60,6 @@ generator = Generator(Gs_network, args.batch_size, randomize_noise=args.randomiz
 perceptual_model = PerceptualModel(args.image_size, layer=9, batch_size=args.batch_size)
 perceptual_model.build_perceptual_model(generator.generated_image)
 perceptual_model.setup(generator.dlatent_variable, args.lr)
-generator.reset_dlatents()
 sess = tf.get_default_session()
 sess.graph.finalize()
 
