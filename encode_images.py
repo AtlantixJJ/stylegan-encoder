@@ -78,7 +78,7 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     losses = []
     generator.reset_dlatents()
     pbar = tqdm(range(args.iterations), leave=False)
-    for i in enumerate(pbar):
+    for i in pbar:
         _, loss_np = sess.run([min_op, loss], {t:v for t,v in zip(refs, refs_np)})
         if i > args.iterations * 0.7 and loss_np < best_loss:
             best_loss = loss_np
