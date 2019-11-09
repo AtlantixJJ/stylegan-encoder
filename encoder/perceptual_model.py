@@ -54,7 +54,7 @@ class PerceptualModel:
         assert(len(images_list) != 0 and len(images_list) <= self.batch_size)
         loaded_image = load_images(images_list, self.img_size)
         #image_features = self.perceptual_model.predict_on_batch(loaded_image)
-        image_features = sess.run(self.outputs, {self.input: loaded_image})
+        image_features = self.sess.run(self.outputs, {self.input: loaded_image})
         return [load_images] + image_features
 
     def setup(self, vars_to_optimize, learning_rate):
