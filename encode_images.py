@@ -97,7 +97,6 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
         losses.append(loss)
         pbar.set_description(' '.join(names)+' Loss: %.2f' % loss_np)
     print(' '.join(names), ' loss:', best_loss)
-    record.append(losses)
 
     # Generate images from found dlatents and save them
     for img_array, dlatent, noise, img_name in zip(best_image, best_d, best_n, names):
@@ -105,4 +104,4 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
         img.save(os.path.join(args.generated_images_dir, f'{img_name}.png'), 'PNG')
         np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), dlatent)
         np.save(os.path.join(args.noise_dir, f'{img_name}.npy'), noise)
-        np.save(os.path.join(args.generated_images_dir, f'{img_name}.npy'), record)
+        np.save(os.path.join(args.generated_images_dir, f'{img_name}.npy'), losses)
