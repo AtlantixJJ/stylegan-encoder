@@ -61,7 +61,7 @@ with open(PATH_FFHQ, "rb") as f:
 generator = Generator(Gs_network, args.batch_size, randomize_noise=args.randomize_noise)
 perceptual_model = PerceptualModel(args.image_size, layer=9, batch_size=args.batch_size)
 perceptual_model.build_perceptual_model(generator.generated_image)
-perceptual_model.setup(generator.dlatent_variable, args.lr)
+perceptual_model.setup(generator.dlatent_variable, generator.noise_variable, args.lr)
 refs = [perceptual_model.ref_image] + perceptual_model.ref_img_features
 min_op = perceptual_model.min_op
 loss = perceptual_model.loss
