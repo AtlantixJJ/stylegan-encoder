@@ -88,7 +88,7 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
             _, loss_np = sess.run([noise_min_op, loss], {t:v for t,v in zip(refs, refs_np)})
             sess.run([generator.clamp_noise_op])
 
-        if i > args.iterations * 0.7 and loss_np < best_loss:
+        if loss_np < best_loss:# and i > args.iterations * 0.7:
             best_loss = loss_np
             v = generator.get_param()
             best_d = v[0]
