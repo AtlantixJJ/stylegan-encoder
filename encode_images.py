@@ -29,6 +29,7 @@ parser.add_argument('noise_dir', help='Directory for storing dlatent representat
 # for now it's unclear if larger batch leads to better performance/quality
 parser.add_argument('--batch_size', default=1, help='Batch size for generator and perceptual model', type=int)
 parser.add_argument('--start', type=int, default=0, help='Start from')
+parser.add_argument('--end', type=int, default=1000, help='Start from')
 
 # Perceptual model params
 parser.add_argument('--image_size', default=1024, help='Size of images for perceptual model', type=int)
