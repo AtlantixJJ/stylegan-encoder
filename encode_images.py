@@ -43,7 +43,7 @@ args, other_args = parser.parse_known_args()
 ref_images = [os.path.join(args.src_dir, x) for x in os.listdir(args.src_dir)]
 ref_images = list(filter(os.path.isfile, ref_images))
 ref_images.sort()
-ref_images = ref_images[args.start:]
+ref_images = ref_images[args.start:args.end]
 
 if len(ref_images) == 0:
     raise Exception('%s is empty' % args.src_dir)
@@ -94,7 +94,7 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
             best_d = v[0]
             best_n = v[1:]
             best_image = generator.generate_images()
-            
+
         losses.append(loss_np)
         pbar.set_description(' '.join(names)+' Loss: %.2f' % loss_np)
     print(' '.join(names), ' loss:', best_loss)
