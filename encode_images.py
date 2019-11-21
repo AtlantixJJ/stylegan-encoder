@@ -94,7 +94,7 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
             best_d = v[0]
             best_n = v[1:]
             best_image = generator.generate_images()
-        losses.append(loss)
+        losses.append(loss_np)
         pbar.set_description(' '.join(names)+' Loss: %.2f' % loss_np)
     print(' '.join(names), ' loss:', best_loss)
 
