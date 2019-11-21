@@ -34,7 +34,7 @@ parser.add_argument('--end', type=int, default=100, help='Start from')
 # Perceptual model params
 parser.add_argument('--image_size', default=1024, help='Size of images for perceptual model', type=int)
 parser.add_argument('--lr', default=0.01, help='Learning rate for perceptual model', type=float)
-parser.add_argument('--iterations', default=100, help='Number of optimization steps for each batch', type=int)
+parser.add_argument('--iterations', default=500, help='Number of optimization steps for each batch', type=int)
 
 # Generator params
 parser.add_argument('--randomize_noise', default=False, help='Add noise to dlatents during optimization', type=bool)
