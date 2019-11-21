@@ -89,13 +89,12 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
         else:
             _, loss_np = sess.run([min_op, loss], {t:v for t,v in zip(refs, refs_np)})
 
-        if loss_np < best_loss:# and i > args.iterations * 0.7:
+        if loss_np < best_loss and i > args.iterations * 0.7:
             best_loss = loss_np
             v = generator.get_param()
             best_d = v[0]
             best_n = v[1:]
             best_image = generator.generate_images()
-            break
         losses.append(loss_np)
         pbar.set_description(' '.join(names)+' Loss: %.2f' % loss_np)
     print(' '.join(names), ' loss:', best_loss)
