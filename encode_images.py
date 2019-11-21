@@ -101,7 +101,7 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
 
     # Generate images from found dlatents and save them
     img_name = names[0]
-    img = PIL.Image.fromarray(best_image, 'RGB')
+    img = PIL.Image.fromarray(best_image[0], 'RGB')
     img.save(os.path.join(args.generated_images_dir, f'{img_name}.png'), 'PNG')
     np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), best_d)
     obj = np.zeros((len(best_n),), dtype="object")
