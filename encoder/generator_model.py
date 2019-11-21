@@ -21,7 +21,6 @@ class Generator:
         self.synthesis = model.components.synthesis
         self.mapping = model.components.mapping
         self.initial_dlatents_np = self.get_mean_dlatents()
-        self.initial_dlatents = tf.constant(self.initial_dlatents_np)
 
         self.synthesis.run(
             self.initial_dlatents_np,
@@ -37,9 +36,15 @@ class Generator:
         self.sess = tf.get_default_session()
         self.graph = tf.get_default_graph()
 
-        self.dlatent_variable = next(v for v in tf.global_variables() if 'learnable_dlatents' in v.name)
+        self.dlatent_variable = next(v for v in tf.global_variables()
+            if 'learnable_dlatents' in v.name)
+        self.dlatents_input = tf.placeholder(tf.float32, shape=[None, 18, 512])
         self.noise_variable = next(v for v in tf.global_variables() if 'noise' in v.name)
-        self.assign_dlatent_op = tf.assign(self.dlatent_variable, self.initial_dlatents_np)
+        self.noise_input = [tf.placeholder(tf.float32, shape=v.shape)
+            for v in self.noise_variable]
+        self.assign_dlatent_op = tf.assign(self.dlatent_variable, self.dlatents_input)
+        self.assign_noise_op = [tf.assign(noise, noise_input)
+            for noise, noise_input in zip(self.noise_variable, self.noise_input)]
         
         self.generator_output = self.graph.get_tensor_by_name('G_synthesis_1/_Run/concat:0')
         self.generated_image = tflib.convert_images_to_uint8(
@@ -61,11 +66,14 @@ class Generator:
         np.save("face_average_w.npy", self.avg_w)
         return self.avg_w
 
-    def reset_dlatents(self):
-        self.sess.run(self.assign_dlatent_op)
+    def reset(self):
+        dic = {self.dlatents_input : self.initial_dlatents_np}
+        for noise in self.noise_input:
+            dic[noise] = np.random.randn(*noise.shape)
+        self.sess.run([self.assign_dlatent_op] + self.noise_input, dic)
 
-    def get_dlatents(self):
-        return self.sess.run(self.dlatent_variable)
+    def get_param(self):
+        return self.sess.run([self.dlatent_variable] + self.noise_variable)
 
     def generate_images(self, dlatents=None):
         if dlatents:

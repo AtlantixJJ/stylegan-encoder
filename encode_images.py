@@ -24,6 +24,7 @@ parser = argparse.ArgumentParser(description='Find latent representation of refe
 parser.add_argument('src_dir', help='Directory with images for encoding')
 parser.add_argument('generated_images_dir', help='Directory for storing generated images')
 parser.add_argument('dlatent_dir', help='Directory for storing dlatent representations')
+parser.add_argument('noise_dir', help='Directory for storing dlatent representations')
 
 # for now it's unclear if larger batch leads to better performance/quality
 parser.add_argument('--batch_size', default=1, help='Batch size for generator and perceptual model', type=int)
@@ -32,7 +33,7 @@ parser.add_argument('--start', type=int, default=0, help='Start from')
 # Perceptual model params
 parser.add_argument('--image_size', default=1024, help='Size of images for perceptual model', type=int)
 parser.add_argument('--lr', default=0.01, help='Learning rate for perceptual model', type=float)
-parser.add_argument('--iterations', default=1000, help='Number of optimization steps for each batch', type=int)
+parser.add_argument('--iterations', default=100, help='Number of optimization steps for each batch', type=int)
 
 # Generator params
 parser.add_argument('--randomize_noise', default=False, help='Add noise to dlatents during optimization', type=bool)
@@ -76,13 +77,15 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
 
     best_loss = 0xffffffff
     losses = []
-    generator.reset_dlatents()
+    generator.reset()
     pbar = tqdm(range(args.iterations), leave=False)
     for i in pbar:
         _, loss_np = sess.run([min_op, loss], {t:v for t,v in zip(refs, refs_np)})
         if i > args.iterations * 0.7 and loss_np < best_loss:
             best_loss = loss_np
-            best_d = generator.get_dlatents()
+            v = generator.get_param()
+            best_d = v[0]
+            best_n = v[1:]
             best_image = generator.generate_images()
         losses.append(loss)
         pbar.set_description(' '.join(names)+' Loss: %.2f' % loss_np)
@@ -94,4 +97,5 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
         img = PIL.Image.fromarray(img_array, 'RGB')
         img.save(os.path.join(args.generated_images_dir, f'{img_name}.png'), 'PNG')
         np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), dlatent)
+        np.save(os.path.join(args.noise_dir, f'{img_name}.npy'), noise)
         np.save(os.path.join(args.generated_images_dir, f'{img_name}.npy'), record)
