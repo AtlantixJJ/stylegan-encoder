@@ -64,6 +64,7 @@ perceptual_model.build_perceptual_model(generator.generated_image)
 perceptual_model.setup(generator.dlatent_variable, generator.noise_variable, args.lr)
 refs = [perceptual_model.ref_image] + perceptual_model.ref_img_features
 min_op = perceptual_model.min_op
+noise_min_op = perceptual_model.noise_min_op
 loss = perceptual_model.loss
 sess = tf.get_default_session()
 sess.graph.finalize()
@@ -82,6 +83,10 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     pbar = tqdm(range(args.iterations), leave=False)
     for i in pbar:
         _, loss_np = sess.run([min_op, loss], {t:v for t,v in zip(refs, refs_np)})
+        if i % 3 == 0:
+            _, loss_np = sess.run([noise_min_op, loss], {t:v for t,v in zip(refs, refs_np)})
+            sess.run([generator.clamp_noise_op])
+
         if i > args.iterations * 0.7 and loss_np < best_loss:
             best_loss = loss_np
             v = generator.get_param()
@@ -94,7 +99,7 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     record.append(losses)
 
     # Generate images from found dlatents and save them
-    for img_array, dlatent, img_name in zip(best_image, best_d, names):
+    for img_array, dlatent, noise, img_name in zip(best_image, best_d, best_n, names):
         img = PIL.Image.fromarray(img_array, 'RGB')
         img.save(os.path.join(args.generated_images_dir, f'{img_name}.png'), 'PNG')
         np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), dlatent)

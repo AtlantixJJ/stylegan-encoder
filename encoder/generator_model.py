@@ -45,7 +45,8 @@ class Generator:
         self.assign_dlatent_op = tf.assign(self.dlatent_variable, self.dlatents_input)
         self.assign_noise_op = [tf.assign(noise, noise_input)
             for noise, noise_input in zip(self.noise_variable, self.noise_input)]
-        
+        self.clamp_noise_op = [tf.assign(noise, tf.clip_by_value(noise, -1, 1))
+            for noise in self.noise_variable]
         self.generator_output = self.graph.get_tensor_by_name('G_synthesis_1/_Run/concat:0')
         self.generated_image = tflib.convert_images_to_uint8(
             self.generator_output, nchw_to_nhwc=True, uint8_cast=False)
