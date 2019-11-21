@@ -38,6 +38,7 @@ class Generator:
         self.graph = tf.get_default_graph()
 
         self.dlatent_variable = next(v for v in tf.global_variables() if 'learnable_dlatents' in v.name)
+        self.noise_variable = next(v for v in tf.global_variables() if 'noise' in v.name)
         self.assign_dlatent_op = tf.assign(self.dlatent_variable, self.initial_dlatents_np)
         
         self.generator_output = self.graph.get_tensor_by_name('G_synthesis_1/_Run/concat:0')
