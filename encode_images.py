@@ -92,19 +92,20 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
         if loss_np < best_loss:# and i > args.iterations * 0.7:
             best_loss = loss_np
             v = generator.get_param()
-            break
             best_d = v[0]
             best_n = v[1:]
             best_image = generator.generate_images()
-
+            break
         losses.append(loss_np)
         pbar.set_description(' '.join(names)+' Loss: %.2f' % loss_np)
     print(' '.join(names), ' loss:', best_loss)
 
     # Generate images from found dlatents and save them
-    for img_array, dlatent, noise, img_name in zip(best_image, best_d, best_n, names):
-        img = PIL.Image.fromarray(img_array, 'RGB')
-        img.save(os.path.join(args.generated_images_dir, f'{img_name}.png'), 'PNG')
-        np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), dlatent)
-        np.save(os.path.join(args.noise_dir, f'{img_name}.npy'), noise)
-        np.save(os.path.join(args.generated_images_dir, f'{img_name}.npy'), losses)
+    img_name = names[0]
+    img = PIL.Image.fromarray(best_image, 'RGB')
+    img.save(os.path.join(args.generated_images_dir, f'{img_name}.png'), 'PNG')
+    np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), best_d)
+    obj = np.zeros((len(best_n),), dtype="object")
+    obj[:] = best_n
+    np.save(os.path.join(args.noise_dir, f'{img_name}.npy'), best_n)
+    np.save(os.path.join(args.generated_images_dir, f'{img_name}.npy'), losses)
