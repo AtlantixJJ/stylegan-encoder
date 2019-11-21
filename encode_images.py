@@ -106,5 +106,5 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), best_d)
     obj = np.zeros((len(best_n),), dtype="object")
     obj[:] = best_n
-    np.save(os.path.join(args.noise_dir, f'{img_name}.npy'), best_n)
+    np.save(os.path.join(args.noise_dir, f'{img_name}.npy'), obj)
     np.save(os.path.join(args.generated_images_dir, f'{img_name}.npy'), losses)
