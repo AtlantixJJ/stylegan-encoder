@@ -34,7 +34,7 @@ parser.add_argument('--end', type=int, default=100, help='Start from')
 # Perceptual model params
 parser.add_argument('--image_size', default=1024, help='Size of images for perceptual model', type=int)
 parser.add_argument('--lr', default=0.01, help='Learning rate for perceptual model', type=float)
-parser.add_argument('--iterations', default=1000, help='Number of optimization steps for each batch', type=int)
+parser.add_argument('--iterations', default=500, help='Number of optimization steps for each batch', type=int)
 
 # Generator params
 parser.add_argument('--randomize_noise', default=False, help='Add noise to dlatents during optimization', type=bool)
@@ -83,7 +83,7 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     generator.reset()
     pbar = tqdm(range(args.iterations), leave=False)
     for i in pbar:
-        if i % 3 == 0:
+        if i % 10 == 0:
             _, loss_np = sess.run([noise_min_op, loss], {t:v for t,v in zip(refs, refs_np)})
             sess.run([generator.clamp_noise_op])
         else:

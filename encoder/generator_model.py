@@ -39,7 +39,8 @@ class Generator:
         self.dlatent_variable = next(v for v in tf.global_variables()
             if 'learnable_dlatents' in v.name)
         self.dlatents_input = tf.placeholder(tf.float32, shape=[None, 18, 512])
-        self.noise_variable = [v for v in tf.global_variables() if 'noise' in v.name]
+        self.noise_variable = [v for v in tf.global_variables() 
+            if 'noise' in v.name and "G_synthesis_1" in v.name]
         print(self.noise_variable)
         self.noise_input = [tf.placeholder(tf.float32, shape=v.shape)
             for v in self.noise_variable]
