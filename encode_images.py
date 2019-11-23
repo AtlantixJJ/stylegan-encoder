@@ -83,7 +83,7 @@ for images_batch in tqdm(split_to_batches(ref_images, args.batch_size),
     generator.reset()
     pbar = tqdm(range(args.iterations), leave=False)
     for i in pbar:
-        if i % 10 == 0:
+        if i % 5 == 0:
             _, loss_np = sess.run([noise_min_op, loss], {t:v for t,v in zip(refs, refs_np)})
             sess.run([generator.clamp_noise_op])
         else:
