@@ -40,9 +40,11 @@ parser.add_argument('--iterations', default=500, help='Number of optimization st
 parser.add_argument('--randomize_noise', default=False, help='Add noise to dlatents during optimization', type=bool)
 args, other_args = parser.parse_known_args()
 
+rng = np.random.RandomState(1314)
 ref_images = [os.path.join(args.src_dir, x) for x in os.listdir(args.src_dir)]
 ref_images = list(filter(os.path.isfile, ref_images))
 ref_images.sort()
+ref_images = rng.shuffle(ref_images)
 ref_images = ref_images[args.start:args.end]
 
 if len(ref_images) == 0:
