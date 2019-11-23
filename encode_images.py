@@ -44,7 +44,7 @@ rng = np.random.RandomState(1314)
 ref_images = [os.path.join(args.src_dir, x) for x in os.listdir(args.src_dir)]
 ref_images = list(filter(os.path.isfile, ref_images))
 ref_images.sort()
-ref_images = rng.shuffle(ref_images)
+rng.shuffle(ref_images)
 ref_images = ref_images[args.start:args.end]
 
 if len(ref_images) == 0:
